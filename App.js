@@ -1,112 +1,86 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
+import React, { useRef } from 'react';
+import { View, Text, Image, StatusBar, Animated } from 'react-native';
+import faker from 'faker'
 
-import React from 'react';
-import type {Node} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+faker.seed(10)
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const DATA = [...Array(30).keys()].map((_, i) => {
+  return {
+    key: faker.random.uuid(),
+    image: `https://randomuser.me/api/portraits/${faker.helpers.randomize(['women', 'men'])}/${faker.random.number(60)}.jpg`,
+    name: faker.name.findName(),
+    jobTitle: faker.name.jobTitle(),
+    email: faker.internet.email(),
+  }
+})
+const SPACING = 20;
+const AVATAR_SIZE = 70
+const ITEM_SIZE = AVATAR_SIZE + SPACING * 3
 
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
+const white = "#ffffff"
+const black = '#000000'
+const gray = 'rgb(211,211,211)'
+
+export default () => {
+  const scrollY = useRef(new Animated.Value(0)).current
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View style={{ flex: 1, backgroundColor: gray }}>
+      <Animated.FlatList
+        data={DATA}
+        onScroll={Animated.event([
+          { nativeEvent: { contentOffset: { y: scrollY } } }
+        ],
+          { useNativeDriver: true }
+        )}
+        keyExtractor={item => item.key}
+        contentContainerStyle={{
+          padding: SPACING,
+          paddingTop: StatusBar.currentHeight || 42
+        }}
+        renderItem={({ item, index }) => {
+          const inputRange = [-1, 0, ITEM_SIZE * index, ITEM_SIZE * (index + 2)]
+          const opacityInputRange = [-1, 0, ITEM_SIZE * index, ITEM_SIZE * (index + 1)]
+          const scale = scrollY.interpolate({
+            inputRange,
+            outputRange: [1, 1, 1, 0]
+          })
+          const opacity = scrollY.interpolate({
+            inputRange: opacityInputRange,
+            outputRange: [1, 1, 1, 0]
+          })
+          return (
+            <Animated.View style={{
+              flexDirection: 'row',
+              backgroundColor: white,
+              padding: SPACING,
+              marginBottom: SPACING,
+              borderRadius: 12,
+              shadowColor: '#fff',
+              shadowOffset: {
+                width: 0,
+                height: 10
+              },
+              shadowOpacity: .3,
+              shadowRadius: 20,
+              transform: [{ scale }],
+              opacity
+            }}>
+              <Image
+                source={{ uri: item.image }}
+                style={{
+                  width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE,
+                  marginRight: SPACING / 2,
+                }}
+              />
+              <View>
+                <Text style={{ fontSize: 22, color: black, fontWeight: '700' }}>{item.name}</Text>
+                <Text style={{ fontSize: 18, color: black, opacity: .7 }}>{item.jobTitle}</Text>
+                <Text style={{ fontSize: 14, opacity: .8, color: '#0099cc' }}>{item.email}</Text>
+              </View>
+            </Animated.View>
+          )
+        }}
+      />
     </View>
-  );
-};
-
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
-
-export default App;
+  )
+}
